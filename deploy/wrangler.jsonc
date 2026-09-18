@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "jobmail",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-18",
+  "compatibility_flags": ["nodejs_compat"],
+  // Optional. Attach the Worker to your jobs domain so web visits redirect to
+  // REDIRECT_URL. Email Routing does not need this; delete it or set your hosts.
+  // "routes": [
+  //   { "pattern": "jobs.example.com", "custom_domain": true },
+  //   { "pattern": "www.jobs.example.com", "custom_domain": true }
+  // ],
+  "vars": {
+    // Domain that receives applications, e.g. jobs.example.com
+    "JOBS_DOMAIN": "jobs.example.com",
+    // GitHub owner and repository that store the records (usually this fork).
+    "GITHUB_OWNER": "your-github-owner",
+    "GITHUB_REPO": "jobmail",
+    "GITHUB_BRANCH": "main",
+    // Optional verified Email Routing destination that also receives every application.
+    "FORWARD_TO": "",
+    // Optional URL for web visits to the jobs domain. Empty returns 404.
+    "REDIRECT_URL": ""
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  }
+}
