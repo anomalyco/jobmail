@@ -1,5 +1,7 @@
 # jobmail
 
+<img width="1552" height="1552" alt="image" src="https://github.com/user-attachments/assets/1d5f536b-d567-45f7-8de5-4efd7ad09faa" />
+
 Turn any address at your jobs domain into an inbox that files applications into
 this Git repository. Mail to `engineering@jobs.example.com` becomes:
 
