@@ -19,6 +19,11 @@ Cloudflare Email Routing receives the mail, a Worker parses it, and the GitHub
 API writes every file in one commit. There is no mailbox, no IMAP, and no OAuth.
 Review candidates with `git pull` and whatever tools you already use.
 
+Setup is config-driven: list your domains in `deploy/wrangler.jsonc`, run
+`npm run setup`, and Email Routing, the catch-all rules, and the Worker are
+provisioned for every domain listed. Adding a domain later is the same edit and
+the same command.
+
 ## How it works
 
 ```text
@@ -48,13 +53,18 @@ Applications contain personal data.
 Clone it and open `deploy/wrangler.jsonc`. Set:
 
 ```jsonc
-"JOBS_DOMAIN": "jobs.example.com",
-"GITHUB_OWNER": "your-github-owner",
-"GITHUB_REPO": "your-repository-name",
-"GITHUB_BRANCH": "main"
+"addresses": ["*@jobs.example.com"],
+"vars": {
+  "GITHUB_OWNER": "your-github-owner",
+  "GITHUB_REPO": "your-repository-name",
+  "GITHUB_BRANCH": "main"
+}
 ```
 
-`FORWARD_TO` and `REDIRECT_URL` are optional; see below.
+`addresses` takes one `*@domain` entry per domain that should accept
+applications. Every domain must already be a zone in the Cloudflare account you
+will deploy with, with its nameservers active. `FORWARD_TO` and `REDIRECT_URL`
+are optional; see below.
 
 ## 2. Create the GitHub token
 
@@ -68,40 +78,34 @@ Fine-grained tokens → Generate new token**:
 
 Keep the value for the next step. Never commit it.
 
-## 3. Deploy the Worker
+## 3. Run setup
 
 ```sh
 cd deploy
 npm install
 npx wrangler login
-npm run types
-npm run check
-npm run deploy
-npx wrangler secret put GITHUB_TOKEN
+npm run setup
 ```
 
-Paste the token when prompted. The Worker is named `jobmail`.
+`setup` reads `addresses` from `wrangler.jsonc` and, for each domain:
 
-## 4. Enable Email Routing
+1. Enables Email Routing on the zone, which adds and locks Cloudflare's MX and
+   SPF records. Fails with `Active zone required` if the nameservers are not
+   yet pointed at Cloudflare.
+2. Deploys the Worker (`jobmail`). Wrangler reconciles a catch-all rule on each
+   zone that sends every address to the Worker.
+3. Prompts for `GITHUB_TOKEN` if the secret is not set yet. Paste the token
+   from step 2.
 
-```sh
-npx wrangler email routing enable jobs.example.com
-```
+The command is safe to re-run; it reports `Email Routing rules are up to date`
+when nothing changed. Do not keep another provider's MX records on these
+domains.
 
-This adds the MX and SPF records Cloudflare needs. The zone must be active
-(nameservers pointed at Cloudflare) or the command fails with `Active zone
-required`. Do not keep another provider's MX records on this domain.
+If a domain already has a catch-all rule that was created in the dashboard,
+Wrangler shows it as a conflict and asks before taking it over. Answer yes to
+let the config own the rule from then on.
 
-## 5. Route everything to the Worker
-
-In the Cloudflare dashboard: zone → **Email → Email Routing → Routing rules →
-Catch-all address** → action **Send to a Worker** → select `jobmail` → save.
-
-(The `wrangler email routing rules update … catch-all` beta command currently
-rejects the `worker` action even though the API supports it, so use the
-dashboard for this step.)
-
-## 6. Test
+## 4. Test
 
 Send an email from an external account to `test@jobs.example.com` with a small
 attachment. Within a few seconds a commit appears containing:
@@ -129,6 +133,10 @@ is archived first and then forwarded with `X-Jobmail-Role` set.
 uncomment `routes` in `wrangler.jsonc` with your hostnames, and deploy. Without
 `REDIRECT_URL` the Worker answers HTTP requests with 404.
 
+**Add or remove a domain.** Edit `addresses` and run `npm run setup` again.
+Removing an entry is a destructive change: Wrangler lists the rule it will
+delete and asks for confirmation.
+
 ## Behavior
 
 - `email.txt` holds message metadata plus readable text (HTML is converted when
@@ -152,7 +160,8 @@ uncomment `routes` in `wrangler.jsonc` with your hostnames, and deploy. Without
   Contents read/write on this exact repository and `GITHUB_OWNER`/`GITHUB_REPO`
   match its current name (GitHub redirects renamed repos in a way that breaks
   API writes).
-- **Worker missing from the catch-all list:** deploy once before creating the
-  rule.
+- **`Email Routing has destructive changes … Re-run the deployment
+  interactively`:** the deploy ran without a terminal (CI, piped output). Run
+  `npm run setup` from an interactive shell to confirm the takeover or delete.
 - **401/403 from GitHub:** the token expired or was revoked; run
   `npx wrangler secret put GITHUB_TOKEN` again.

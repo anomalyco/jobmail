@@ -5,6 +5,7 @@
   "scripts": {
     "check": "tsc --noEmit && wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
+    "setup": "node scripts/setup.mjs",
     "types": "wrangler types"
   },
   "dependencies": {

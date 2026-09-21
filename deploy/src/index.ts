@@ -17,12 +17,9 @@ export default {
   },
 
   async email(message, env): Promise<void> {
-    const { role, domain } = parseRecipient(message.to);
-
-    if (domain !== env.JOBS_DOMAIN.toLowerCase()) {
-      message.setReject("Unknown jobs domain");
-      return;
-    }
+    // Email Routing only invokes this Worker for domains listed under
+    // `addresses` in wrangler.jsonc, so the domain needs no further checks here.
+    const { role } = parseRecipient(message.to);
 
     if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(role)) {
       message.setReject("Invalid job address");
@@ -102,18 +99,15 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-function parseRecipient(recipient: string): { role: string; domain: string } {
+function parseRecipient(recipient: string): { role: string } {
   const normalized = recipient.trim().toLowerCase();
   const separator = normalized.lastIndexOf("@");
 
   if (separator <= 0 || separator === normalized.length - 1) {
-    return { role: "", domain: "" };
+    return { role: "" };
   }
 
-  return {
-    role: normalized.slice(0, separator),
-    domain: normalized.slice(separator + 1),
-  };
+  return { role: normalized.slice(0, separator) };
 }
 
 function normalizeEmail(value: string): string {
