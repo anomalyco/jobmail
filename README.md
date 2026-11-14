@@ -1,5 +1,7 @@
 # jobmail
 
+<a href="https://opencode.ai"><picture><source media="(prefers-color-scheme: dark)" srcset="https://opencode.ai/brand/badges/opencode-built-with-g-dark-20.svg"><img alt="Built with OpenCode" src="https://opencode.ai/brand/badges/opencode-built-with-g-light-20.svg" height="20" /></picture></a>
+
 <img width="1552" height="1552" alt="image" src="https://github.com/user-attachments/assets/1d5f536b-d567-45f7-8de5-4efd7ad09faa" />
 
 Turn any address at your jobs domain into an inbox that files applications into
